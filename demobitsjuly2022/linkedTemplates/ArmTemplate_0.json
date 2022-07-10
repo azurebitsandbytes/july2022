@@ -1,0 +1,1338 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "demobitsjuly2022"
+		},
+		"LS_SQL_demosa127_sourcedb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SQL_demosa127_sourcedb'"
+		},
+		"LS_SQL_demosa127_targetdb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SQL_demosa127_targetdb'"
+		},
+		"LS_Storage_demobits_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_Storage_demobits'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_SQL_demosa127_sourcedb')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_SQL_demosa127_sourcedb_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_SQL_demosa127_targetdb')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_SQL_demosa127_targetdb_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_Storage_demobits')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_Storage_demobits_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_July2022CustomerPurchases')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_targetdb",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DataFlow"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "CustomerCode",
+						"type": "varchar"
+					},
+					{
+						"name": "CustomerName",
+						"type": "varchar"
+					},
+					{
+						"name": "ProductsPurchased",
+						"type": "bigint",
+						"precision": 19
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "July2022CustomerPurchases"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_demosa127_sourcedb_orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_sourcedb",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "OrderID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ProductID",
+						"type": "varchar"
+					},
+					{
+						"name": "CustomerID",
+						"type": "varchar"
+					},
+					{
+						"name": "UnitPrice",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "Quantity",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "InsertDateTime",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_sourcedb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_demosa127_targetdb_ConfigurationTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_targetdb",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "WaterMarkColumn",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "ConfigurationTable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_demosa127_targetdb_DynamicTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_targetdb",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "SQL"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_demosa127_targetdb_orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_targetdb",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "OrderID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ProductID",
+						"type": "varchar"
+					},
+					{
+						"name": "CustomerID",
+						"type": "varchar"
+					},
+					{
+						"name": "UnitPrice",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "Quantity",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "InsertDateTime",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_demosa127_targetdb_watermarktable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQL_demosa127_targetdb",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WatermarkValue",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "watermarktable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_DynamicFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Storage"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "show_id",
+						"type": "String"
+					},
+					{
+						"name": "type",
+						"type": "String"
+					},
+					{
+						"name": "title",
+						"type": "String"
+					},
+					{
+						"name": "director",
+						"type": "String"
+					},
+					{
+						"name": "cast",
+						"type": "String"
+					},
+					{
+						"name": "country",
+						"type": "String"
+					},
+					{
+						"name": "date_added",
+						"type": "String"
+					},
+					{
+						"name": "release_year",
+						"type": "String"
+					},
+					{
+						"name": "rating",
+						"type": "String"
+					},
+					{
+						"name": "duration",
+						"type": "String"
+					},
+					{
+						"name": "listed_in",
+						"type": "String"
+					},
+					{
+						"name": "description",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_PurchaseOrder')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Storage"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "PurchaseOrder.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "PurchaseOrderID",
+						"type": "String"
+					},
+					{
+						"name": " CustomerCode",
+						"type": "String"
+					},
+					{
+						"name": "ProductCode",
+						"type": "String"
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "String"
+					},
+					{
+						"name": " PuchaseOrderDate",
+						"type": "String"
+					},
+					{
+						"name": " Quantity",
+						"type": "String"
+					},
+					{
+						"name": " UnitPrice",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_oltp_customer')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DataFlow"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Customer.txt",
+						"container": "oltp"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerCode",
+						"type": "String"
+					},
+					{
+						"name": " CustomerName",
+						"type": "String"
+					},
+					{
+						"name": " Address",
+						"type": "String"
+					},
+					{
+						"name": " PhoneNumber",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_oltp_purchaseorder')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DataFlow"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "PurchaseOrder.txt",
+						"container": "oltp"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "PurchaseOrderID",
+						"type": "String"
+					},
+					{
+						"name": " CustomerCode",
+						"type": "String"
+					},
+					{
+						"name": "ProductCode",
+						"type": "String"
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "String"
+					},
+					{
+						"name": " PuchaseOrderDate",
+						"type": "String"
+					},
+					{
+						"name": " Quantity",
+						"type": "String"
+					},
+					{
+						"name": " UnitPrice",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_target_DynamicFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Storage"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"container": "target"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Storage_demobits_target_container')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Storage_demobits",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Storage"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "target"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Storage_demobits')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyDynamicFile')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Dynamic File",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Storage_demobits_DynamicFile",
+								"type": "DatasetReference",
+								"parameters": {
+									"FileName": {
+										"value": "@pipeline().parameters.FileName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_Storage_demobits_target_container",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-03T16:50:14Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_DynamicFile')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_target_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyFileifNotExists')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Dynamic File Metadata",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "DS_Storage_demobits_target_DynamicFile",
+								"type": "DatasetReference",
+								"parameters": {
+									"FileName": {
+										"value": "@pipeline().parameters.FileName",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "If File is Not Present",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Get Dynamic File Metadata",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@activity('Get Dynamic File Metadata').output.exists",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Copy File",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobStorageReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobStorageWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_Storage_demobits_DynamicFile",
+											"type": "DatasetReference",
+											"parameters": {
+												"FileName": {
+													"value": "@pipeline().parameters.FileName",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_Storage_demobits_target_container",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-09T14:47:30Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_target_DynamicFile')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_DynamicFile')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_target_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyPurchaseOrder')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy PurchaseOrder",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Storage_demobits_PurchaseOrder",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_Storage_demobits_target_container",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-03T16:33:31Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_PurchaseOrder')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Storage_demobits_target_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalCopy_DynamicTable')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LKP_OldWaterMark",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT TableName, Watermarkvalue as OldWaterMarkValue FROM [dbo].[watermarktable] WHERE TableName = '@{pipeline().parameters.TableName}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_demosa127_targetdb_watermarktable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "LKP_NewWaterMark",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT MAX(@{pipeline().parameters.WaterMarkColumn}) AS NewWaterMarkValue FROM @{pipeline().parameters.TableName}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_demosa127_sourcedb_orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy Orders",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "LKP_OldWaterMark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "LKP_NewWaterMark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM @{pipeline().parameters.TableName} WHERE @{pipeline().parameters.WaterMarkColumn}>'@{activity('LKP_OldWaterMark').output.firstRow.OldWaterMarkValue}' AND @{pipeline().parameters.WaterMarkColumn}<='@{activity('LKP_NewWaterMark').output.firstRow.NewWaterMarkValue}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_demosa127_sourcedb_orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_demosa127_targetdb_DynamicTable",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.TableName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Update WaterMarkValue",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Orders",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[spSetWatermark]",
+							"storedProcedureParameters": {
+								"NewTime": {
+									"value": {
+										"value": "@activity('LKP_NewWaterMark').output.firstRow.NewWaterMarkValue",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"TableName": {
+									"value": {
+										"value": "@activity('LKP_OldWaterMark').output.firstRow.TableName",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQL_demosa127_targetdb",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string",
+						"defaultValue": "orders"
+					},
+					"WaterMarkColumn": {
+						"type": "string",
+						"defaultValue": "InsertDateTime"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-09T16:51:14Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_targetdb_watermarktable')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_sourcedb_orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_targetdb_DynamicTable')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalCopy_Orders')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LKP_OldWaterMark",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT TableName, Watermarkvalue as OldWaterMarkValue FROM [dbo].[watermarktable] WHERE TableName = 'orders'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_demosa127_targetdb_watermarktable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "LKP_NewWaterMark",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT MAX(InsertDateTime) AS NewWaterMarkValue FROM orders",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_demosa127_sourcedb_orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy Orders",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "LKP_OldWaterMark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "LKP_NewWaterMark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM orders WHERE InsertDateTime>'@{activity('LKP_OldWaterMark').output.firstRow.OldWaterMarkValue}' AND InsertDateTime<='@{activity('LKP_NewWaterMark').output.firstRow.NewWaterMarkValue}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_demosa127_sourcedb_orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_demosa127_targetdb_orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Update WaterMarkValue",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Orders",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[spSetWatermark]",
+							"storedProcedureParameters": {
+								"NewTime": {
+									"value": {
+										"value": "@activity('LKP_NewWaterMark').output.firstRow.NewWaterMarkValue",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"TableName": {
+									"value": {
+										"value": "@activity('LKP_OldWaterMark').output.firstRow.TableName",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQL_demosa127_targetdb",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-09T16:09:42Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_targetdb_watermarktable')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_sourcedb_orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_demosa127_targetdb_orders')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQL_demosa127_targetdb')]"
+			]
+		}
+	]
+}

@@ -1,0 +1,97 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "demobitsjuly2022"
+		},
+		"LS_SQL_demosa127_sourcedb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SQL_demosa127_sourcedb'"
+		},
+		"LS_SQL_demosa127_targetdb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SQL_demosa127_targetdb'"
+		},
+		"LS_Storage_demobits_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_Storage_demobits'"
+		},
+		"TRG_Event_PL_CopyDynamicFile_properties_PL_CopyDynamicFile_parameters_FileName": {
+			"type": "string",
+			"defaultValue": "@triggerBody().fileName"
+		},
+		"TRG_Event_PL_CopyDynamicFile_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/d003678d-3be9-4518-b21e-a5101bea6844/resourceGroups/demoRG/providers/Microsoft.Storage/storageAccounts/demobits"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "demobitsjuly2022_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"LS_SQL_demosa127_sourcedb_connectionString": {
+						"value": "[parameters('LS_SQL_demosa127_sourcedb_connectionString')]"
+					},
+					"LS_SQL_demosa127_targetdb_connectionString": {
+						"value": "[parameters('LS_SQL_demosa127_targetdb_connectionString')]"
+					},
+					"LS_Storage_demobits_connectionString": {
+						"value": "[parameters('LS_Storage_demobits_connectionString')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "demobitsjuly2022_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"TRG_Event_PL_CopyDynamicFile_properties_PL_CopyDynamicFile_parameters_FileName": {
+						"value": "[parameters('TRG_Event_PL_CopyDynamicFile_properties_PL_CopyDynamicFile_parameters_FileName')]"
+					},
+					"TRG_Event_PL_CopyDynamicFile_properties_typeProperties_scope": {
+						"value": "[parameters('TRG_Event_PL_CopyDynamicFile_properties_typeProperties_scope')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'demobitsjuly2022_ArmTemplate_0')]"
+			]
+		}
+	]
+}

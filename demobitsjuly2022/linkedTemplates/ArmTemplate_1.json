@@ -1,0 +1,342 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "demobitsjuly2022"
+		},
+		"TRG_Event_PL_CopyDynamicFile_properties_PL_CopyDynamicFile_parameters_FileName": {
+			"type": "string",
+			"defaultValue": "@triggerBody().fileName"
+		},
+		"TRG_Event_PL_CopyDynamicFile_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/d003678d-3be9-4518-b21e-a5101bea6844/resourceGroups/demoRG/providers/Microsoft.Storage/storageAccounts/demobits"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_CustomerPurchases')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_Storage_demobits_oltp_purchaseorder",
+								"type": "DatasetReference"
+							},
+							"name": "PurchaseOrder"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_Storage_demobits_oltp_customer",
+								"type": "DatasetReference"
+							},
+							"name": "Customer"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DS_SQL_TargetDB_July2022CustomerPurchases",
+								"type": "DatasetReference"
+							},
+							"name": "Output"
+						}
+					],
+					"transformations": [
+						{
+							"name": "PurchaseOrderProjection"
+						},
+						{
+							"name": "CustomerProjection"
+						},
+						{
+							"name": "DataQualityFIlters"
+						},
+						{
+							"name": "JoinStream"
+						},
+						{
+							"name": "Metrics"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          PurchaseOrderID as string,",
+						"          { CustomerCode} as string,",
+						"          ProductCode as string,",
+						"          EmployeeCode as string,",
+						"          { PuchaseOrderDate} as string,",
+						"          { Quantity} as long,",
+						"          { UnitPrice} as decimal(10,0)",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     inferDriftedColumnTypes: true,",
+						"     ignoreNoFilesFound: false) ~> PurchaseOrder",
+						"source(output(",
+						"          CustomerCode as string,",
+						"          { CustomerName} as string,",
+						"          { Address} as string,",
+						"          { PhoneNumber} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Customer",
+						"PurchaseOrder select(mapColumn(",
+						"          { CustomerCode},",
+						"          { Quantity}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> PurchaseOrderProjection",
+						"Customer select(mapColumn(",
+						"          CustomerCode,",
+						"          { CustomerName}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> CustomerProjection",
+						"PurchaseOrderProjection filter(greater({ CustomerCode}, \"0\")) ~> DataQualityFIlters",
+						"DataQualityFIlters, CustomerProjection join({ CustomerCode} == CustomerCode,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> JoinStream",
+						"JoinStream aggregate(groupBy({ CustomerCode},",
+						"          { CustomerName}),",
+						"     ProductsPurchased = sum({ Quantity})) ~> Metrics",
+						"Metrics sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          CustomerCode as string,",
+						"          CustomerName as string,",
+						"          ProductsPurchased as long",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          CustomerCode = { CustomerCode},",
+						"          CustomerName = { CustomerName},",
+						"          ProductsPurchased",
+						"     )) ~> Output"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CallDataFlow')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "DF_CustomerPurchases",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_CustomerPurchases",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"PurchaseOrder": {},
+									"Customer": {},
+									"Output": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-10T15:16:41Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_CustomerPurchases')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalCopy_Main')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This pipeline is meant to incrementally load data from source to destination for multiple tables",
+				"activities": [
+					{
+						"name": "LKP_ConfigurationTable",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_demosa127_targetdb_ConfigurationTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEachTable",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LKP_ConfigurationTable",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LKP_ConfigurationTable').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Execute PL_IncrementalCopy_DynamicTable",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_IncrementalCopy_DynamicTable",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"TableName": {
+												"value": "@item().TableName",
+												"type": "Expression"
+											},
+											"WaterMarkColumn": {
+												"value": "@item().WaterMarkColumn",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-09T17:13:41Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TRG_Event_PL_CopyDynamicFile')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "PL_CopyDynamicFile",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"FileName": "[parameters('TRG_Event_PL_CopyDynamicFile_properties_PL_CopyDynamicFile_parameters_FileName')]"
+						}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/source/blobs/",
+					"blobPathEndsWith": ".txt",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('TRG_Event_PL_CopyDynamicFile_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/trigger1')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipeline": {
+					"pipelineReference": {
+						"referenceName": "PL_CallDataFlow",
+						"type": "PipelineReference"
+					},
+					"parameters": {}
+				},
+				"type": "TumblingWindowTrigger",
+				"typeProperties": {
+					"frequency": "Minute",
+					"interval": 5,
+					"startTime": "2022-07-10T15:40:00Z",
+					"endTime": "2022-07-11T15:40:00Z",
+					"delay": "00:00:00",
+					"maxConcurrency": 50,
+					"retryPolicy": {
+						"intervalInSeconds": 30
+					},
+					"dependsOn": []
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_CallDataFlow')]"
+			]
+		}
+	]
+}
