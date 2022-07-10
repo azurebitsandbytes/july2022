@@ -1,0 +1,9 @@
+{
+	"name": "demobitsjuly2022",
+	"location": "eastus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "216c5da6-60ad-411a-8b61-928535498020",
+		"tenantId": "e7906d66-13b6-4b40-a958-1404d344c898"
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"name": "DS_SQL_demosa127_targetdb_DynamicTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SQL_demosa127_targetdb",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "SQL"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,26 @@
+{
+	"name": "DS_SQL_demosa127_targetdb_ConfigurationTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SQL_demosa127_targetdb",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "TableName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "WaterMarkColumn",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "ConfigurationTable"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

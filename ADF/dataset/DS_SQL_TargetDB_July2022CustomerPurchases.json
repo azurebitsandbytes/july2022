@@ -1,0 +1,34 @@
+{
+	"name": "DS_SQL_TargetDB_July2022CustomerPurchases",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SQL_demosa127_targetdb",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "DataFlow"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CustomerCode",
+				"type": "varchar"
+			},
+			{
+				"name": "CustomerName",
+				"type": "varchar"
+			},
+			{
+				"name": "ProductsPurchased",
+				"type": "bigint",
+				"precision": 19
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "July2022CustomerPurchases"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
